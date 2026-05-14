@@ -1,0 +1,25 @@
+# ENV
+.env
+
+# Python
+__pycache__/
+*.pyc
+
+# Docker volumes
+data/postgres/
+data/listmonk/
+
+# Logs
+*.log
+
+# VSCode
+.vscode/
+
+# Linux
+.DS_Store
+
+# Node
+node_modules/
+
+# IDE
+.idea//
