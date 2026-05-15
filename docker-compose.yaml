@@ -1,3 +1,4 @@
+
 services:
 
   postgres:
@@ -16,6 +17,13 @@ services:
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
 
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
   redis:
     image: redis:7-alpine
     container_name: redis
@@ -24,13 +32,18 @@ services:
     ports:
       - "6379:6379"
 
+    volumes:
+      - ./data/redis:/data
+
+
   listmonk:
     image: listmonk/listmonk:v5.0.2
     container_name: listmonk
     restart: unless-stopped
 
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
 
     ports:
       - "${LISTMONK_PORT}:9000"
@@ -42,5 +55,15 @@ services:
       LISTMONK_db__port: ${LISTMONK_DB_PORT}
       LISTMONK_db__user: ${LISTMONK_DB_USER}
       LISTMONK_db__password: ${LISTMONK_DB_PASSWORD}
-      LISTMONK_db__database: ${LISTMONK_DB_NAME}
+      LISTMONK_db__dbname: ${LISTMONK_DB_NAME}
       LISTMONK_db__ssl_mode: disable
+
+    command: >
+      sh -c "
+      ./listmonk --install --yes &&
+      ./listmonk
+      "
+
+    volumes:
+      - ./data/listmonk:/listmonk/uploads
+
