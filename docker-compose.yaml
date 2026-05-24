@@ -1,69 +1,135 @@
-
 services:
-
-  postgres:
-    image: postgres:16-alpine
-    container_name: postgres
-    restart: unless-stopped
-
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-
-    ports:
-      - "5432:5432"
-
-    volumes:
-      - ./data/postgres:/var/lib/postgresql/data
-
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
 
   redis:
     image: redis:7-alpine
-    container_name: redis
+    container_name: pkos_redis
     restart: unless-stopped
 
     ports:
       - "6379:6379"
 
     volumes:
-      - ./data/redis:/data
+      - redis_data:/data
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    networks:
+      - pkos_net
 
 
-  listmonk:
-    image: listmonk/listmonk:v5.0.2
-    container_name: listmonk
+  postgres:
+    image: postgres:16-alpine
+    container_name: pkos_postgres
     restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres:/docker-entrypoint-initdb.d
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER}"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+    networks:
+      - pkos_net
+
+
+  anythingllm:
+    image: mintplexlabs/anythingllm:latest
+    container_name: pkos_anythingllm
+
+    restart: unless-stopped
+
+    ports:
+      - "3001:3001"
+
+    env_file:
+      - .env
+
+    volumes:
+      - anythingllm_data:/app/storage
 
     depends_on:
       postgres:
         condition: service_healthy
 
+    networks:
+      - pkos_net
+
+
+  gateway:
+    build:
+      context: ./gateway-go
+
+    container_name: pkos_gateway
+
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
     ports:
-      - "${LISTMONK_PORT}:9000"
+      - "8080:8080"
 
-    environment:
-      LISTMONK_app__address: 0.0.0.0:9000
+    depends_on:
+      redis:
+        condition: service_healthy
 
-      LISTMONK_db__host: ${LISTMONK_DB_HOST}
-      LISTMONK_db__port: ${LISTMONK_DB_PORT}
-      LISTMONK_db__user: ${LISTMONK_DB_USER}
-      LISTMONK_db__password: ${LISTMONK_DB_PASSWORD}
-      LISTMONK_db__dbname: ${LISTMONK_DB_NAME}
-      LISTMONK_db__ssl_mode: disable
+    networks:
+      - pkos_net
 
-    command: >
-      sh -c "
-      ./listmonk --install --yes &&
-      ./listmonk
-      "
 
-    volumes:
-      - ./data/listmonk:/listmonk/uploads
+  worker:
+    build:
+      context: ./workers-python
 
+    container_name: pkos_worker
+
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    depends_on:
+
+      redis:
+        condition: service_healthy
+
+      postgres:
+        condition: service_healthy
+
+    networks:
+      - pkos_net
+
+
+volumes:
+
+  postgres_data:
+
+  anythingllm_data:
+
+  redis_data:
+
+
+networks:
+
+  pkos_net:
+    driver: bridge

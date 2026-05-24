@@ -1,221 +1,172 @@
-# Listmonk White Label for Fast Testing 
+# PKOS – Personal Knowledge Operating System 🥤📚
 
-This project provides a ready-to-use Listmonk environment using Docker Compose.
+PKOS is an event-driven personal knowledge infrastructure currently under development.
 
-The goal is to quickly spin up a complete local stack for:
+The project aims to transform static notes from platforms such as **Google Drive** and **Obsidian** into an automated knowledge pipeline powered by asynchronous processing and AI workflows.
 
-* development
-* testing
-* DevOps labs
-* self-hosted experiments
-* API integrations
-* newsletter automation
-* infrastructure studies
-* container orchestration learning
+Current status:
+
+🚧 Infrastructure Phase + Event Pipeline Foundation
+
+The architecture is already defined, but several intelligence components are still being implemented.
 
 ---
 
-# What is Listmonk?
+# Why “Garapa”? 🥤🌱
 
-Listmonk is a high-performance open source newsletter and mailing list manager.
+The infrastructure layer is inspired by **Garapa**.
 
-Main features:
+In Brazil, *Garapa* is the popular name for **fresh sugarcane juice**, produced by crushing sugarcane stalks and extracting their juice.
 
-* newsletter campaigns
-* subscriber management
-* mailing lists
-* REST API
-* automation support
-* segmentation
-* modern admin dashboard
-* SMTP support
-* self-hosted architecture
+This idea inspired PKOS:
 
-Official website:
+Raw notes → Processing → Refined knowledge
 
-[Listmonk Official Website](https://listmonk.app?utm_source=chatgpt.com)
+The system receives notes and reflections, processes them through queues, AI pipelines and delivery mechanisms, “extracting” learning material from fragmented information.
 
-Official repository:
+The Kindle export idea also reinforces this concept:
 
-[Listmonk GitHub](https://github.com/knadh/listmonk?utm_source=chatgpt.com)
+> PKOS crushes notes and serves learning juice.
 
 ---
 
-# Included Stack
+# Current Architecture 🏗️
 
-This environment automatically starts:
+PKOS follows a **Modular Monolith + Event-Driven** approach.
 
-* PostgreSQL
-* Redis
-* Docker
-* Docker Compose
-* Listmonk
+Heavy workloads are isolated using queues so AI processing never blocks event ingestion.
 
----
+```mermaid
+graph TD
 
-# Default Application Port
+    subgraph Input [Knowledge Sources]
+        GAS[Google Apps Script] --> GW
+        OBS[Obsidian / Git] --> GW
+    end
 
-The application runs by default on:
+    subgraph Core [Event Layer]
+        GW[Go Gateway API]
+        GW --> RD[(Redis)]
+        RD --> WK[Python Workers]
+    end
 
-```bash id="vg9ctv"
-http://localhost:9000
+    subgraph Intelligence [Future AI Layer]
+        WK -.planned.-> ALLM[AnythingLLM]
+        ALLM -.planned.-> VDB[Vector DB]
+    end
+
+    subgraph Output [Persistence]
+        WK --> PG[(PostgreSQL)]
+        WK -.planned.-> KD[Send Kindle]
+    end
 ```
 
 ---
 
-# Default Credentials
+# Repository Structure 📂
 
-Username:
+```text
+my-pkos/
 
-```text id="mhl5zy"
-admin
-```
-
-Password:
-
-```text id="qzbj5z"
-listmonk
-```
-
----
-
-# Getting Started
-
-## 1. Clone the repository
-
-```bash id="0awp0v"
-git clone <repository>
-cd <repository>
-```
-
----
-
-## 2. Configure environment variables
-
-This project already includes an `.env-example` file.
-
-Copy it:
-
-```bash id="g3fq1v"
-cp .env-example .env
-```
-
-Edit the `.env` file with your own configuration if needed.
-
----
-
-## 3. Start the containers
-
-```bash id="y7h4s9"
-docker compose up -d
+├── README.md
+├── .gitignore
+├── .env.example
+├── docker-compose.yml
+│
+├── gateway-go/
+│   ├── cmd/api/main.go
+│   ├── internal/
+│   │   ├── handlers/
+│   │   ├── middleware/
+│   │   ├── routes/
+│   │   ├── services/
+│   │   └── models/
+│   ├── go.mod
+│   └── Dockerfile
+│
+├── workers-python/
+│   ├── app/
+│   │   ├── main.py
+│   │   ├── tasks/
+│   │   ├── ai/
+│   │   └── integrations/
+│   ├── requirements.txt
+│   └── Dockerfile
+│
+├── infra/
+│   ├── traefik/
+│   ├── cloudflare/
+│   └── postgres/
+│
+├── apps-script/
+│   └── drive-trigger.gs
+│
+└── scripts/
+    ├── dev.sh
+    └── test-webhook.sh
 ```
 
 ---
 
-## 4. Verify running containers
+# Components Status 🚧
 
-```bash id="u7eb4q"
-docker ps
-```
+## Foundation Layer
 
----
-
-# Available Services
-
-| Service    | Port |
-| ---------- | ---- |
-| Listmonk   | 9000 |
-| PostgreSQL | 5432 |
-| Redis      | 6379 |
+- [x] Repository organization
+- [x] Docker orchestration definition
+- [x] Gateway architecture
+- [x] Worker separation
+- [ ] Redis integration
+- [ ] PostgreSQL persistence
 
 ---
 
-# Useful Commands
+## Event Ingestion
 
-## View Listmonk logs
-
-```bash id="qf9e2z"
-docker logs -f listmonk
-```
-
----
-
-## Access PostgreSQL container
-
-```bash id="l4m2du"
-docker exec -it postgres sh
-```
+- [ ] Go Gateway implementation
+- [ ] Webhook validation
+- [ ] JWT middleware
+- [ ] Google Apps Script integration
 
 ---
 
-## Connect to PostgreSQL
+## Processing Layer
 
-```bash id="s7p1xo"
-psql -U admin -d listmonk
-```
-
----
-
-## List databases
-
-```sql id="v9z0j2"
-\l
-```
+- [ ] Redis consumer loop
+- [ ] Worker task execution
+- [ ] Drive integrations
+- [ ] Kindle export
 
 ---
 
-## List tables
+## Intelligence Layer (Planned)
 
-```sql id="h5t3fr"
-\dt
-```
-
----
-
-## Exit PostgreSQL
-
-```sql id="f0m8na"
-\q
-```
+- [ ] AnythingLLM integration
+- [ ] Embedding ingestion
+- [ ] RAG pipeline
+- [ ] Vector database
 
 ---
 
-# Architecture Overview
+# Planned Stack 🚀
 
-```text id="t2d1sk"
-Listmonk
-   │
-   ├── PostgreSQL
-   ├── Redis
-   └── Docker Compose
-```
-
----
-
-# Project Purpose
-
-This repository acts as a lightweight "white label" setup for rapidly testing and experimenting with Listmonk.
-
-It allows developers and students to:
-
-* quickly deploy a complete environment
-* study containerized architectures
-* practice Docker Compose
-* explore self-hosted applications
-* test integrations and APIs
-* create local DevOps labs
+| Layer | Technology |
+|---|---|
+| Gateway | Go + Gin |
+| Queue | Redis |
+| Workers | Python |
+| Storage | PostgreSQL |
+| AI | AnythingLLM |
+| Reverse Proxy | Traefik |
+| Security | Cloudflare Tunnel |
+| Delivery | Kindle |
 
 ---
 
-# Future Improvements
+# Vision 🎯
 
-* SMTP integrations
-* Reverse proxy with Nginx
-* HTTPS with Traefik
-* OAuth authentication
-* Automated backups
-* Monitoring stack
-* CI/CD pipelines
-* VPS deployment templates
+PKOS is designed to become a personal knowledge refinery:
 
----
+Capture → Queue → Process → Enrich → Deliver
+
+Turning notes into continuously consumable knowledge.
